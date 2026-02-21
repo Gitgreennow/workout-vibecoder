@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workout Vibecoder</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',sans-serif; background:#0f0f1a; color:#e0e0e0; min-height:100vh; display:flex; justify-content:center; align-items:center; padding:2rem 1rem; transition:background .3s; }
+body.bg-video { background:transparent; }
+body.club-mode { background:#050510; }
+body.club-mode.bg-video { background:transparent; }
+.app { max-width:460px; width:100%; display:flex; flex-direction:column; align-items:center; gap:1.5rem; position:relative; z-index:1; }
+.logo { font-size:1.8rem; font-weight:700; background:linear-gradient(135deg,#8b5cf6,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-align:center; }
+.sub { color:#666; font-size:.85rem; text-align:center; margin-top:.2rem; }
+
+/* 카드 */
+.card { background:rgba(22,22,42,.4); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-radius:20px; padding:2rem; border:1px solid rgba(255,255,255,.08); box-shadow:0 8px 32px rgba(0,0,0,.3); width:100%; transition:all .3s; }
+.card.orange { border-color:rgba(249,115,22,.3); }
+
+/* 클럽 모드 카드 */
+.club-card { position:relative; overflow:hidden; }
+.club-card::before { content:''; position:absolute; inset:-2px; border-radius:22px; background:conic-gradient(from var(--club-angle,0deg),#ff006e,#8338ec,#3a86ff,#06d6a0,#ffbe0b,#ff006e); opacity:0; transition:opacity .5s; z-index:0; }
+.club-active .club-card::before { opacity:1; animation:clubSpin 3s linear infinite; }
+@keyframes clubSpin { to{--club-angle:360deg} }
+@property --club-angle { syntax:'<angle>'; initial-value:0deg; inherits:false; }
+.club-card>.club-inner { position:relative; z-index:1; background:rgba(22,22,42,.45); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-radius:18px; padding:2rem; }
+
+/* 배지 */
+.badge { display:inline-block; padding:.35rem .9rem; border-radius:20px; font-size:.8rem; font-weight:600; margin-bottom:.5rem; }
+.badge.idle { background:#1a1a2e; color:#666; }
+.badge.think { background:rgba(96,165,250,.1); color:#60a5fa; }
+.badge.exercise { background:rgba(249,115,22,.1); color:#fb923c; }
+
+/* 클럽 배지 */
+.club-active .badge.exercise { animation:clubBadge .5s ease infinite alternate; background:rgba(255,0,110,.2); color:#ff006e; }
+@keyframes clubBadge { to{background:rgba(131,56,236,.2);color:#8338ec;transform:scale(1.05)} }
+
+/* 원형 타이머 */
+.timer-wrap { position:relative; width:280px; height:280px; margin:0 auto; }
+.timer-wrap svg { transform:rotate(-90deg); }
+.timer-bg { fill:none; stroke:rgba(255,255,255,.06); stroke-width:8; }
+.timer-fg { fill:none; stroke-width:8; stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+.timer-fg.think { stroke:url(#gThink); }
+.timer-fg.exercise { stroke:url(#gExercise); }
+.timer-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.time-big { font-size:4rem; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:2px; }
+.time-big.orange { color:#fb923c; }
+.time-label { color:#666; font-size:.8rem; margin-top:.2rem; }
+.ex-icon-big { font-size:3.5rem; transition:transform .3s; }
+
+/* 클럽 타이머 이펙트 */
+.club-active .ex-icon-big { animation:clubIcon .4s ease infinite alternate; }
+@keyframes clubIcon { to{transform:scale(1.2) rotate(5deg)} }
+.club-active .timer-fg.exercise { stroke:url(#gClub); filter:drop-shadow(0 0 8px rgba(255,0,110,.6)); }
+.club-active .time-big.orange { animation:clubTime .8s ease infinite alternate; }
+@keyframes clubTime { 0%{color:#ff006e;text-shadow:0 0 20px rgba(255,0,110,.5)} 50%{color:#8338ec;text-shadow:0 0 20px rgba(131,56,236,.5)} 100%{color:#3a86ff;text-shadow:0 0 20px rgba(58,134,255,.5)} }
+
+/* 스트로브 오버레이 */
+.strobe { position:fixed; inset:0; pointer-events:none; z-index:999; opacity:0; transition:opacity .1s; }
+.strobe.flash { opacity:1; }
+
+/* 비트 파티클 */
+.particles { position:fixed; inset:0; pointer-events:none; z-index:998; overflow:hidden; }
+.particle { position:absolute; border-radius:50%; animation:particleFly 2s ease-out forwards; }
+@keyframes particleFly { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-200px) scale(0)} }
+
+/* 네온 글로우 바 */
+.neon-bar { height:3px; width:100%; border-radius:2px; background:linear-gradient(90deg,#ff006e,#8338ec,#3a86ff,#06d6a0,#ffbe0b,#ff006e); background-size:200% 100%; opacity:0; transition:opacity .3s; }
+.club-active .neon-bar { opacity:1; animation:neonSlide 2s linear infinite; }
+@keyframes neonSlide { to{background-position:-200% 0} }
+
+/* 흐름 설명 */
+.flow-hint { text-align:center; color:#555; font-size:.78rem; line-height:1.6; margin-top:.3rem; }
+.flow-hint strong { color:#999; }
+
+/* 버튼 */
+.btn { border:none; padding:.7rem 2rem; border-radius:12px; font-size:1rem; font-weight:600; cursor:pointer; transition:all .15s; }
+.btn:hover { transform:translateY(-2px); }
+.btn.send { background:linear-gradient(135deg,#f97316,#fbbf24); color:#fff; font-size:1.1rem; padding:.9rem 2.5rem; }
+.btn.send:hover { background:linear-gradient(135deg,#ea580c,#f59e0b); }
+.btn.back { background:linear-gradient(135deg,#8b5cf6,#a78bfa); color:#fff; font-size:1.1rem; padding:.9rem 2.5rem; }
+.btn.stop { background:#e74c3c; color:#fff; }
+.btn.ghost { background:rgba(255,255,255,.03); color:#666; border:1px solid rgba(255,255,255,.08); font-size:.8rem; padding:.4rem 1rem; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+.btns { display:flex; gap:.5rem; justify-content:center; margin-top:.5rem; }
+
+/* 운동 정보 */
+.ex-name { font-size:1.4rem; font-weight:700; text-align:center; margin-top:.3rem; }
+.club-active .ex-name { animation:clubText 1s ease infinite alternate; }
+@keyframes clubText { 0%{text-shadow:0 0 10px rgba(255,0,110,.4)} 100%{text-shadow:0 0 20px rgba(58,134,255,.4)} }
+.ex-desc { color:#999; font-size:.85rem; text-align:center; max-width:340px; margin:0 auto; line-height:1.5; }
+.ex-reps { color:#ffbe0b; font-size:1rem; font-weight:700; text-align:center; margin-top:.3rem; }
+.ex-remain { color:#666; font-size:.75rem; text-align:center; }
+.dots { display:flex; gap:6px; justify-content:center; margin:.5rem 0; flex-wrap:wrap; }
+.dot { width:9px; height:9px; border-radius:50%; background:#2a2a3e; transition:background .3s; }
+.dot.done { background:#4ade80; }
+.dot.now { background:#fb923c; }
+.club-active .dot.now { animation:clubDot .5s ease infinite alternate; }
+@keyframes clubDot { to{background:#ff006e;box-shadow:0 0 8px rgba(255,0,110,.6)} }
+
+/* 세션 카운터 */
+.session-counter { text-align:center; color:#555; font-size:.75rem; margin-top:.3rem; }
+
+/* 통계 */
+.stats-title { color:#666; font-size:.85rem; font-weight:500; margin-bottom:.6rem; }
+.stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; width:100%; }
+.stat { background:rgba(22,22,42,.35); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-radius:14px; padding:1rem; border:1px solid rgba(255,255,255,.06); box-shadow:0 4px 16px rgba(0,0,0,.2); text-align:center; }
+.stat-icon { font-size:1.3rem; }
+.stat-val { font-size:1.2rem; font-weight:700; color:#fff; margin-top:.2rem; }
+.stat-lbl { font-size:.7rem; color:#555; }
+
+/* 히스토리 */
+.hist-item { display:flex; align-items:center; gap:.6rem; background:rgba(255,255,255,.05); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-radius:10px; padding:.5rem .7rem; border:1px solid rgba(255,255,255,.04); }
+.hist-item + .hist-item { margin-top:.4rem; }
+.hist-name { flex:1; font-size:.85rem; }
+.hist-time { color:#555; font-size:.7rem; }
+
+/* 주간 차트 */
+.chart-wrap { display:flex; align-items:flex-end; justify-content:space-between; gap:6px; height:100px; }
+.chart-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.chart-bar-wrap { width:100%; height:80px; display:flex; flex-direction:column; justify-content:flex-end; }
+.bar-code { background:rgba(96,165,250,.7); border-radius:3px 3px 0 0; transition:height .3s; }
+.bar-ex { background:rgba(249,115,22,.7); border-radius:0 0 3px 3px; transition:height .3s; }
+.chart-day { font-size:.7rem; color:#555; }
+.chart-day.today { color:#a78bfa; font-weight:700; }
+.legend { display:flex; gap:1rem; justify-content:center; margin-top:.6rem; font-size:.7rem; color:#555; }
+.legend span { display:flex; align-items:center; gap:4px; }
+.legend .sq { width:8px; height:8px; border-radius:2px; }
+
+/* 설정 */
+.settings-toggle { width:100%; }
+.settings-panel { margin-top:.8rem; }
+.setting-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:.8rem; }
+.setting-row label { color:#999; font-size:.85rem; }
+.setting-row input[type=checkbox] { width:18px; height:18px; accent-color:#8b5cf6; }
+.setting-hint { color:#555; font-size:.7rem; margin-bottom:.6rem; }
+.btn.save { background:#8b5cf6; color:#fff; width:100%; padding:.6rem; }
+
+/* 유튜브 플레이어 */
+.yt-section { width:100%; }
+.yt-tabs { display:flex; gap:0; margin-bottom:.8rem; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,.06); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+.yt-tab { flex:1; padding:.6rem; text-align:center; font-size:.8rem; font-weight:600; cursor:pointer; transition:all .2s; background:rgba(22,22,42,.3); color:#555; border:none; }
+.yt-tab.active-think { background:rgba(96,165,250,.15); color:#60a5fa; }
+.yt-tab.active-ex { background:rgba(249,115,22,.15); color:#fb923c; }
+.yt-tab .yt-tab-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:5px; }
+.yt-tab .yt-tab-dot.think { background:#60a5fa; }
+.yt-tab .yt-tab-dot.ex { background:#fb923c; }
+.yt-card { position:relative; background:rgba(22,22,42,.4); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-radius:20px; padding:1.5rem; border:1px solid rgba(255,255,255,.08); box-shadow:0 8px 32px rgba(0,0,0,.3); width:100%; }
+.yt-card.border-think { border-color:rgba(96,165,250,.3); }
+.yt-card.border-ex { border-color:rgba(249,115,22,.3); }
+.yt-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.8rem; }
+.yt-header .stats-title { margin-bottom:0; }
+.yt-input-wrap { display:flex; gap:.4rem; }
+.yt-input { flex:1; padding:.5rem .7rem; background:rgba(15,15,26,.5); border:1px solid rgba(255,255,255,.06); border-radius:10px; color:#fff; font-size:.8rem; outline:none; }
+.yt-input::placeholder { color:#444; }
+.yt-input:focus { border-color:#8b5cf6; }
+.yt-go { background:#8b5cf6; color:#fff; border:none; border-radius:10px; padding:.5rem .8rem; font-size:.8rem; font-weight:600; cursor:pointer; white-space:nowrap; }
+.yt-go:hover { background:#7c3aed; }
+.yt-frame-wrap { position:relative; width:100%; padding-top:56.25%; border-radius:12px; overflow:hidden; background:#000; margin-top:.6rem; }
+.yt-frame-wrap iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:none; border-radius:12px; }
+.yt-placeholder { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#444; font-size:.85rem; gap:.4rem; }
+.yt-placeholder span { font-size:2rem; }
+.yt-presets { display:flex; gap:.4rem; flex-wrap:wrap; margin-top:.6rem; }
+.yt-preset { background:rgba(26,26,46,.4); border:1px solid rgba(255,255,255,.06); border-radius:8px; padding:.3rem .6rem; font-size:.7rem; color:#999; cursor:pointer; transition:all .15s; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+.yt-preset:hover { border-color:#8b5cf6; color:#ccc; }
+.yt-now-playing { text-align:center; margin-top:.6rem; font-size:.7rem; color:#555; }
+.yt-now-playing strong { color:#a78bfa; }
+
+/* 배경 유튜브 비디오 */
+.yt-bg-container { position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:0; overflow:hidden; pointer-events:none; }
+.yt-bg-container iframe { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:177.78vh; height:100vh; min-width:100vw; min-height:56.25vw; border:none; }
+.yt-bg-overlay { position:absolute; inset:0; background:rgba(15,15,26,.65); z-index:1; }
+body.club-mode .yt-bg-overlay { background:rgba(5,5,16,.45); }
+.yt-bg-control { position:fixed; bottom:1rem; right:1rem; z-index:100; background:rgba(22,22,42,.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.1); border-radius:50%; width:40px; height:40px; font-size:1.2rem; cursor:pointer; color:#e0e0e0; transition:all .2s; display:none; }
+.yt-bg-control:hover { background:rgba(139,92,246,.3); }
+
+/* 가독성 text-shadow */
+.time-big { text-shadow:0 2px 8px rgba(0,0,0,.5); }
+.ex-name { text-shadow:0 2px 6px rgba(0,0,0,.4); }
+.stat-val { text-shadow:0 1px 4px rgba(0,0,0,.3); }
+.logo { text-shadow:0 2px 10px rgba(0,0,0,.3); }
+
+/* 운동 관리 리스트 */
+.ex-manage { width:100%; }
+.ex-list { display:flex; flex-direction:column; gap:.4rem; margin-top:.6rem; }
+.ex-list-item { display:flex; align-items:center; gap:.6rem; padding:.6rem .8rem; background:rgba(255,255,255,.04); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-radius:12px; border:1px solid rgba(255,255,255,.06); transition:all .2s; }
+.ex-list-item.disabled { opacity:.4; }
+.ex-list-item .ex-list-icon { font-size:1.2rem; flex-shrink:0; }
+.ex-list-item .ex-list-info { flex:1; min-width:0; }
+.ex-list-item .ex-list-name { font-size:.85rem; font-weight:600; color:#e0e0e0; }
+.ex-list-item .ex-list-reps { font-size:.7rem; color:#888; }
+.ex-list-toggle { width:36px; height:20px; border-radius:10px; border:none; cursor:pointer; position:relative; transition:background .2s; flex-shrink:0; }
+.ex-list-toggle.on { background:#4ade80; }
+.ex-list-toggle.off { background:#333; }
+.ex-list-toggle::after { content:''; position:absolute; top:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:left .2s; }
+.ex-list-toggle.on::after { left:18px; }
+.ex-list-toggle.off::after { left:2px; }
+.ex-count-info { text-align:center; font-size:.75rem; color:#888; margin-top:.4rem; }
+
+/* backdrop-filter fallback */
+@supports not (backdrop-filter:blur(1px)) {
+  .card,.stat,.yt-card,.club-card>.club-inner,.yt-tabs,.yt-preset,.btn.ghost { background:rgba(22,22,42,.85); }
+}
+
+.text-center { text-align:center; }
+.hidden { display:none!important; }
+</style>
+</head>
+<body>
+<!-- 배경 유튜브 비디오 -->
+<div class="yt-bg-container hidden" id="ytBgContainer">
+  <div class="yt-bg-overlay" id="ytBgOverlay"></div>
+</div>
+
+<!-- 클럽 이펙트 오버레이 -->
+<div class="strobe" id="strobe"></div>
+<div class="particles" id="particles"></div>
+
+<!-- 배경 비디오 컨트롤 -->
+<button class="yt-bg-control" id="ytBgControl" onclick="toggleBgControls()">🎬</button>
+
+<div class="app">
+  <div>
+    <div class="logo">Workout Vibecoder</div>
+    <div class="sub">Exercise while vibe coding</div>
+  </div>
+
+  <!-- SVG 그라데이션 정의 -->
+  <svg width="0" height="0"><defs>
+    <linearGradient id="gThink" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#818cf8"/></linearGradient>
+    <linearGradient id="gExercise" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f97316"/><stop offset="100%" stop-color="#fbbf24"/></linearGradient>
+    <linearGradient id="gClub" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ff006e"/><stop offset="50%" stop-color="#8338ec"/><stop offset="100%" stop-color="#3a86ff"/></linearGradient>
+  </defs></svg>
+
+  <!-- 유튜브 플레이어 (듀얼) -->
+  <div class="yt-section">
+    <div class="yt-tabs">
+      <button class="yt-tab active-think" id="ytTabThink" onclick="showYTPanel('think')">
+        <span class="yt-tab-dot think"></span>🧠 Think Music
+      </button>
+      <button class="yt-tab" id="ytTabEx" onclick="showYTPanel('exercise')">
+        <span class="yt-tab-dot ex"></span>💪 Workout Music
+      </button>
+    </div>
+    <div class="yt-card border-think" id="ytPanelThink">
+      <div class="yt-header"><div class="stats-title">🧠 Think Music</div></div>
+      <div class="yt-input-wrap">
+        <input class="yt-input" id="ytInputThink" placeholder="Paste YouTube URL" onkeydown="if(event.key==='Enter')loadYT('think')">
+        <button class="yt-go" onclick="loadYT('think')">Play</button>
+      </div>
+      <div class="yt-frame-wrap" id="ytWrapThink">
+        <div class="yt-placeholder" id="ytPlaceholderThink"><span>🎵</span>Music for code review</div>
+      </div>
+      <div class="yt-presets">
+        <div class="yt-preset" onclick="playPreset('think','jfKfPfyJRdk')">lofi hip hop</div>
+        <div class="yt-preset" onclick="playPreset('think','4xDzrJKXOOY')">synthwave</div>
+        <div class="yt-preset" onclick="playPreset('think','7NOSDKb0HlU')">jazz coding</div>
+        <div class="yt-preset" onclick="playPreset('think','rUxyKA_-grg')">rain + cafe</div>
+      </div>
+    </div>
+    <div class="yt-card border-ex hidden" id="ytPanelEx">
+      <div class="yt-header"><div class="stats-title">💪 Workout Music</div></div>
+      <div class="yt-input-wrap">
+        <input class="yt-input" id="ytInputEx" placeholder="Paste YouTube URL" onkeydown="if(event.key==='Enter')loadYT('exercise')">
+        <button class="yt-go" onclick="loadYT('exercise')">Play</button>
+      </div>
+      <div class="yt-frame-wrap" id="ytWrapEx">
+        <div class="yt-placeholder" id="ytPlaceholderEx"><span>🔥</span>Music for workouts</div>
+      </div>
+      <div class="yt-presets">
+        <div class="yt-preset" onclick="playPreset('exercise','hKyGMCZyFsg')">workout mix</div>
+        <div class="yt-preset" onclick="playPreset('exercise','gExjbMIJkSM')">hip hop gym</div>
+        <div class="yt-preset" onclick="playPreset('exercise','n8X9_MgEdCg')">EDM workout</div>
+        <div class="yt-preset" onclick="playPreset('exercise','3MteSlpJCKo')">rock energy</div>
+      </div>
+    </div>
+    <div class="yt-now-playing" id="ytStatus">Music auto-switches based on state</div>
+  </div>
+
+  <!-- 대기/생각 모드 카드 -->
+  <div class="card" id="thinkCard">
+    <div class="text-center"><span class="badge idle" id="thinkBadge">Idle</span></div>
+    <div class="timer-wrap">
+      <svg width="280" height="280">
+        <circle cx="140" cy="140" r="130" class="timer-bg"/>
+        <circle cx="140" cy="140" r="130" class="timer-fg think" id="thinkRing"/>
+      </svg>
+      <div class="timer-center">
+        <div class="time-big" id="thinkTime">00:00</div>
+        <div class="time-label" id="thinkLabel">Total exercise today</div>
+      </div>
+    </div>
+    <div class="flow-hint" id="flowHint">
+      After sending a message to Claude,<br>press <strong>Space</strong> or the button to start exercising
+    </div>
+    <div class="btns">
+      <button class="btn send" id="sendBtn" onclick="startExercise()">💬 Sent! Start Workout</button>
+    </div>
+    <div class="session-counter" id="sessionCounter"></div>
+  </div>
+
+  <!-- 운동 모드 카드 (클럽 모드) -->
+  <div class="club-card hidden" id="exerciseCard">
+    <div class="club-inner">
+      <div class="neon-bar"></div>
+      <div class="text-center" style="margin-top:.8rem"><span class="badge exercise" id="exBadge">Working out! 💪</span></div>
+      <div class="timer-wrap">
+        <svg width="280" height="280">
+          <circle cx="140" cy="140" r="130" class="timer-bg"/>
+          <circle cx="140" cy="140" r="130" class="timer-fg exercise" id="exRing"/>
+        </svg>
+        <div class="timer-center">
+          <div class="ex-icon-big" id="exIcon"></div>
+          <div class="time-big orange" id="exTime">00:30</div>
+        </div>
+      </div>
+      <div class="ex-name" id="exName"></div>
+      <div class="ex-reps" id="exReps"></div>
+      <div class="ex-desc" id="exDesc"></div>
+      <div style="margin-top:.5rem">
+        <div class="ex-remain" id="exElapsed"></div>
+      </div>
+      <div class="dots" id="exDots"></div>
+      <div class="neon-bar"></div>
+      <div class="btns" style="margin-top:.8rem">
+        <button class="btn back" onclick="stopExercise()">🧠 Back! Reviewing</button>
+      </div>
+      <div class="btns" style="margin-top:0">
+        <button class="btn ghost" onclick="skipCurrent()">Skip this exercise</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 오늘 통계 -->
+  <div style="width:100%">
+    <div class="stats-title">Today's Stats</div>
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-icon">💬</div><div class="stat-val" id="sSends">0</div><div class="stat-lbl">Messages Sent</div></div>
+      <div class="stat"><div class="stat-icon">💪</div><div class="stat-val" id="sExercise">0m</div><div class="stat-lbl">Exercise Time</div></div>
+      <div class="stat"><div class="stat-icon">🧠</div><div class="stat-val" id="sThink">0m</div><div class="stat-lbl">Think Time</div></div>
+      <div class="stat"><div class="stat-icon">🔥</div><div class="stat-val" id="sExCount">0</div><div class="stat-lbl">Exercises Done</div></div>
+    </div>
+  </div>
+
+  <!-- 운동 히스토리 -->
+  <div class="card hidden" id="histCard">
+    <div class="stats-title" style="margin-bottom:.4rem">Today's Exercises</div>
+    <div id="histList"></div>
+  </div>
+
+  <!-- 주간 차트 -->
+  <div class="card">
+    <div class="stats-title" style="margin-bottom:.4rem">This Week</div>
+    <div class="chart-wrap" id="weekChart"></div>
+    <div class="legend"><span><div class="sq" style="background:rgba(96,165,250,.7)"></div>Think</span><span><div class="sq" style="background:rgba(249,115,22,.7)"></div>Exercise</span></div>
+  </div>
+
+  <!-- 운동 관리 리스트 -->
+  <div class="ex-manage" style="width:100%">
+    <button class="btn ghost settings-toggle" onclick="toggleExList()">Manage Exercises</button>
+    <div class="card hidden" id="exListPanel" style="margin-top:.6rem">
+      <div class="stats-title" style="margin-bottom:.2rem">Toggle Exercises</div>
+      <div class="ex-count-info" id="exCountInfo"></div>
+      <div class="ex-list" id="exListContainer"></div>
+    </div>
+  </div>
+
+  <!-- 설정 -->
+  <div style="width:100%;padding-bottom:2rem">
+    <button class="btn ghost settings-toggle" onclick="toggleSettings()">Settings</button>
+    <div class="card settings-panel hidden" id="settingsPanel">
+      <div class="setting-row"><label>Sound Effects</label><input type="checkbox" id="setSound" checked></div>
+      <div class="setting-row"><label>Club Effects</label><input type="checkbox" id="setClub" checked></div>
+      <div class="setting-hint">Flashing club lighting effects during exercise</div>
+      <div class="setting-row"><label>Background Video</label><input type="checkbox" id="setBgVideo" checked></div>
+      <div class="setting-hint">Show YouTube video as UI background</div>
+      <button class="btn save" onclick="saveSettingsUI()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── 운동 데이터 (전체 풀) ───
+const ALL_EXERCISES=[
+  {id:"pushup",name:"Push-ups",icon:"💪",desc:"Push your body up with arms extended. Chest & triceps.",reps:"12~15 reps",dur:45},
+  {id:"floor-press",name:"DB Floor Press",icon:"🏋️",desc:"Lie on the floor, press dumbbells up from chest.",reps:"10 reps",dur:45},
+  {id:"overhead-press",name:"DB Overhead Press",icon:"🙌",desc:"Press dumbbells overhead. Shoulders!",reps:"10 reps",dur:45},
+  {id:"db-row",name:"DB Row",icon:"🚣",desc:"Bend over, pull dumbbells up. Back builder!",reps:"10 each",dur:50},
+  {id:"db-curl",name:"DB Curl",icon:"💪",desc:"Curl dumbbells up with your biceps.",reps:"12 reps",dur:40},
+  {id:"lateral-raise",name:"DB Lateral Raise",icon:"🦅",desc:"Raise arms to the sides. Shoulder definition!",reps:"12 reps",dur:40},
+  {id:"plank",name:"Plank",icon:"🧱",desc:"Hold a straight body on your elbows.",reps:"30 sec",dur:35},
+  {id:"bulgarian-split",name:"Bulgarian Split Squat",icon:"🇧🇬",desc:"Rear foot elevated on chair, squat down.",reps:"8 each",dur:50},
+  {id:"goblet-squat",name:"DB Goblet Squat",icon:"🏆",desc:"Hold dumbbell at chest, squat deep.",reps:"12 reps",dur:45},
+  {id:"rdl",name:"DB Romanian Deadlift",icon:"🏗️",desc:"Hinge forward with slight knee bend. Hamstrings!",reps:"10 reps",dur:45},
+  {id:"glute-bridge",name:"Glute Bridge",icon:"🌉",desc:"Lie down, drive hips up. Glutes!",reps:"15 reps",dur:40},
+  {id:"calf-raise",name:"DB Calf Raise",icon:"🦶",desc:"Hold dumbbells, rise up on toes.",reps:"20 reps",dur:35},
+  {id:"leg-raise",name:"Leg Raise",icon:"🦵",desc:"Lie down, raise legs up. Lower abs!",reps:"12 reps",dur:40},
+];
+
+// 활성 운동 목록 (LocalStorage에서 관리)
+let exercises=[...ALL_EXERCISES];
+
+// ─── 상태 ───
+let state="idle";
+let exTimer=null;
+let exElapsed=0;
+let exIdx=0;
+let exLeft=0;
+let routine=[];
+let usedExercises=new Set();
+let clubTimer=null;
+let strobeTimer=null;
+
+let settings={sound:true,club:true,bgVideo:true};
+let stats={date:today(),sends:0,exercise:0,think:0,exCount:0};
+let history=[];
+
+const C=2*Math.PI*130;
+const CLUB_COLORS=["rgba(255,0,110,.15)","rgba(131,56,236,.15)","rgba(58,134,255,.15)","rgba(6,214,160,.15)","rgba(255,190,11,.15)"];
+
+// ─── 유틸 ───
+function today(){return new Date().toISOString().slice(0,10)}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
+function fmtMin(s){const m=Math.floor(s/60);if(!m&&!s)return"0m";if(!m)return s+"s";const r=s%60;return r?m+"m "+r+"s":m+"m"}
+function fmtHM(iso){const d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+function $(id){return document.getElementById(id)}
+function show(el){el.classList.remove("hidden")}
+function hide(el){el.classList.add("hidden")}
+
+// ─── 저장/로드 ───
+function loadStats(){try{const a=JSON.parse(localStorage.getItem("wv-stats2")||"{}");if(a[today()])stats=a[today()]}catch{}}
+function saveStats(){try{const a=JSON.parse(localStorage.getItem("wv-stats2")||"{}");a[stats.date]=stats;localStorage.setItem("wv-stats2",JSON.stringify(a))}catch{}}
+function loadHist(){try{const a=JSON.parse(localStorage.getItem("wv-hist")||"{}");history=a[today()]||[]}catch{history=[]}}
+function saveHist(){try{const a=JSON.parse(localStorage.getItem("wv-hist")||"{}");a[today()]=history;localStorage.setItem("wv-hist",JSON.stringify(a))}catch{}}
+function loadSettings2(){try{const s=JSON.parse(localStorage.getItem("wv-set3"));if(s)settings={sound:true,club:true,bgVideo:true,...s}}catch{}}
+function saveSettings2(){localStorage.setItem("wv-set3",JSON.stringify(settings))}
+// ─── 알림 ───
+function beep(){
+  if(!settings.sound)return;
+  try{const c=new AudioContext(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=800;g.gain.setValueAtTime(.3,c.currentTime);g.gain.exponentialRampToValueAtTime(.01,c.currentTime+.5);o.start();o.stop(c.currentTime+.5);
+  const o2=c.createOscillator(),g2=c.createGain();o2.connect(g2);g2.connect(c.destination);o2.frequency.value=1000;g2.gain.setValueAtTime(.3,c.currentTime+.6);g2.gain.exponentialRampToValueAtTime(.01,c.currentTime+1.1);o2.start(c.currentTime+.6);o2.stop(c.currentTime+1.1)}catch{}
+}
+
+// ─── 클럽 이펙트 ───
+function startClubMode(){
+  if(!settings.club)return;
+  document.body.classList.add("club-mode","club-active");
+  // 스트로브
+  let strobeCount=0;
+  strobeTimer=setInterval(()=>{
+    const strobe=$("strobe");
+    const color=CLUB_COLORS[strobeCount%CLUB_COLORS.length];
+    strobe.style.background=color;
+    strobe.classList.add("flash");
+    setTimeout(()=>strobe.classList.remove("flash"),100);
+    strobeCount++;
+    // 파티클 생성
+    spawnParticles();
+  },2000);
+}
+
+function stopClubMode(){
+  document.body.classList.remove("club-mode","club-active");
+  if(strobeTimer){clearInterval(strobeTimer);strobeTimer=null}
+  $("strobe").classList.remove("flash");
+  $("particles").innerHTML="";
+}
+
+function spawnParticles(){
+  const container=$("particles");
+  const colors=["#ff006e","#8338ec","#3a86ff","#06d6a0","#ffbe0b"];
+  for(let i=0;i<6;i++){
+    const p=document.createElement("div");
+    p.className="particle";
+    const size=4+Math.random()*8;
+    p.style.width=size+"px";
+    p.style.height=size+"px";
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.left=Math.random()*100+"%";
+    p.style.bottom="-10px";
+    p.style.animationDuration=(1+Math.random()*2)+"s";
+    container.appendChild(p);
+    setTimeout(()=>p.remove(),3000);
+  }
+}
+
+// ─── 원형 타이머 ───
+function setRing(id,fraction){
+  const el=$(id);if(!el)return;
+  el.style.strokeDasharray=C;
+  el.style.strokeDashoffset=C*(1-Math.min(fraction,1));
+}
+
+// ─── UI 업데이트 ───
+function updateUI(){
+  $("sSends").textContent=stats.sends;
+  $("sExercise").textContent=fmtMin(stats.exercise);
+  $("sThink").textContent=fmtMin(stats.think);
+  $("sExCount").textContent=stats.exCount;
+  if(state==="idle")$("thinkTime").textContent=fmt(stats.exercise);
+  if(stats.sends>0)$("sessionCounter").textContent=stats.sends+" messages sent · "+stats.exCount+" exercises done";
+  if(history.length>0){show($("histCard"));$("histList").innerHTML=history.map(h=>`<div class="hist-item"><span>${h.icon}</span><span class="hist-name">${h.name}</span><span class="hist-time">${fmtHM(h.at)}</span></div>`).join("")}
+  else hide($("histCard"));
+  renderWeek();
+}
+
+// ─── 운동 루틴 생성 ───
+function pickNextExercise(){
+  const pool=exercises;
+  let available=pool.filter(e=>!usedExercises.has(e.id));
+  if(available.length===0){usedExercises.clear();available=[...pool]}
+  const pick=available[Math.floor(Math.random()*available.length)];
+  usedExercises.add(pick.id);
+  return pick;
+}
+
+// ─── 운동 시작 ───
+function startExercise(){
+  state="exercising";
+  stats.sends++;saveStats();beep();
+  routine=[];
+  for(let i=0;i<4;i++) routine.push(pickNextExercise());
+  exIdx=0;exLeft=routine[0].dur;exElapsed=0;
+  hide($("thinkCard"));show($("exerciseCard"));
+  renderEx();startExTimer();startClubMode();
+  switchMusic("exercise");updateUI();
+}
+
+function startExTimer(){
+  if(exTimer)clearInterval(exTimer);
+  exTimer=setInterval(()=>{
+    exElapsed++;exLeft--;stats.exercise++;saveStats();
+    $("exTime").textContent=fmt(exLeft);
+    setRing("exRing",exLeft/routine[exIdx].dur);
+    $("exElapsed").textContent="Session: "+fmt(exElapsed);
+    if(exLeft<=0){
+      logExercise(routine[exIdx]);
+      if(exIdx<routine.length-1){
+        exIdx++;exLeft=routine[exIdx].dur;renderEx();beep();
+      } else {
+        routine=[];
+        for(let i=0;i<4;i++) routine.push(pickNextExercise());
+        exIdx=0;exLeft=routine[0].dur;renderEx();beep();
+      }
+    }
+    updateUI();
+  },1000);
+}
+
+function logExercise(ex){
+  stats.exCount++;
+  history.push({icon:ex.icon,name:ex.name,at:new Date().toISOString()});
+  saveHist();saveStats();
+}
+
+function renderEx(){
+  const e=routine[exIdx];
+  $("exIcon").textContent=e.icon;
+  $("exTime").textContent=fmt(exLeft);
+  $("exName").textContent=e.name;
+  $("exReps").textContent=e.reps;
+  $("exDesc").textContent=e.desc;
+  $("exElapsed").textContent="Session: "+fmt(exElapsed);
+  $("exBadge").textContent="Working out! 💪";
+  setRing("exRing",exLeft/e.dur);
+  $("exDots").innerHTML=routine.map((_,i)=>`<div class="dot ${i<exIdx?"done":i===exIdx?"now":""}"></div>`).join("");
+  speakExercise(e);
+}
+
+function skipCurrent(){
+  if(state!=="exercising")return;
+  if(exIdx<routine.length-1){
+    exIdx++;exLeft=routine[exIdx].dur;renderEx();
+  } else {
+    routine=[];
+    for(let i=0;i<4;i++) routine.push(pickNextExercise());
+    exIdx=0;exLeft=routine[0].dur;renderEx();
+  }
+}
+
+// ─── 운동 중지 ───
+function stopExercise(){
+  if(exTimer){clearInterval(exTimer);exTimer=null}
+  state="idle";
+  show($("thinkCard"));hide($("exerciseCard"));
+  stopClubMode();
+  $("thinkBadge").className="badge idle";$("thinkBadge").textContent="Idle";
+  $("thinkTime").textContent=fmt(stats.exercise);
+  $("thinkLabel").textContent="Total exercise today";
+  $("flowHint").innerHTML='Review Claude\'s response<br>Send another message to <strong>start exercising</strong>';
+  setRing("thinkRing",0);
+  beep();switchMusic("think");updateUI();
+}
+
+// ─── 주간 차트 ───
+function renderWeek(){
+  const days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const now=new Date();const dow=now.getDay();
+  let allStats={};try{allStats=JSON.parse(localStorage.getItem("wv-stats2")||"{}")}catch{}
+  const week=[];
+  for(let i=0;i<7;i++){const d=new Date(now);d.setDate(now.getDate()-dow+i);const k=d.toISOString().slice(0,10);const s=allStats[k]||{think:0,exercise:0};week.push({label:days[i],t:s.think||0,e:s.exercise||0,today:k===today()})}
+  const maxM=Math.max(...week.map(d=>Math.ceil((d.t+d.e)/60)),1);
+  $("weekChart").innerHTML=week.map(d=>{
+    const th=maxM>0?(d.t/60/maxM)*100:0;
+    const eh=maxM>0?(d.e/60/maxM)*100:0;
+    return`<div class="chart-col"><div class="chart-bar-wrap"><div class="bar-code" style="height:${th}%;${d.t?'min-height:3px':''}"></div><div class="bar-ex" style="height:${eh}%;${d.e?'min-height:3px':''}"></div></div><div class="chart-day ${d.today?'today':''}">${d.label}</div></div>`
+  }).join("");
+}
+
+// ─── 설정 ───
+function toggleSettings(){$("settingsPanel").classList.toggle("hidden")}
+function saveSettingsUI(){
+  settings.sound=$("setSound").checked;
+  settings.club=$("setClub").checked;
+  settings.bgVideo=$("setBgVideo").checked;
+  saveSettings2();hide($("settingsPanel"));
+  applyBgVideoSetting();
+}
+
+// ─── 운동 관리 ───
+function loadActiveExercises(){
+  try{
+    const saved=JSON.parse(localStorage.getItem("wv-active-ex"));
+    if(saved&&Array.isArray(saved)){
+      exercises=ALL_EXERCISES.filter(e=>saved.includes(e.id));
+      if(exercises.length===0)exercises=[...ALL_EXERCISES];
+    }
+  }catch{exercises=[...ALL_EXERCISES]}
+}
+function saveActiveExercises(){
+  localStorage.setItem("wv-active-ex",JSON.stringify(exercises.map(e=>e.id)));
+}
+function toggleExList(){$("exListPanel").classList.toggle("hidden");renderExList()}
+function renderExList(){
+  const activeIds=new Set(exercises.map(e=>e.id));
+  $("exCountInfo").textContent=exercises.length+" active / "+ALL_EXERCISES.length+" total";
+  $("exListContainer").innerHTML=ALL_EXERCISES.map(e=>{
+    const on=activeIds.has(e.id);
+    return`<div class="ex-list-item ${on?"":"disabled"}"><span class="ex-list-icon">${e.icon}</span><div class="ex-list-info"><div class="ex-list-name">${e.name}</div><div class="ex-list-reps">${e.reps}</div></div><button class="ex-list-toggle ${on?"on":"off"}" onclick="toggleExercise('${e.id}')"></button></div>`;
+  }).join("");
+}
+function toggleExercise(id){
+  const activeIds=new Set(exercises.map(e=>e.id));
+  if(activeIds.has(id)){
+    if(exercises.length<=1)return;
+    exercises=exercises.filter(e=>e.id!==id);
+  } else {
+    const ex=ALL_EXERCISES.find(e=>e.id===id);
+    if(ex)exercises.push(ex);
+  }
+  saveActiveExercises();
+  usedExercises.clear();
+  renderExList();
+}
+
+// ─── TTS ───
+function speakExercise(ex){
+  if(!('speechSynthesis' in window))return;
+  window.speechSynthesis.cancel();
+  const msg=new SpeechSynthesisUtterance(ex.name+", "+ex.reps);
+  msg.lang="en-US";
+  msg.rate=1.1;
+  msg.volume=1;
+  window.speechSynthesis.speak(msg);
+}
+
+// ─── 유튜브 (듀얼) ───
+let ytIds={think:null,exercise:null};
+let ytActivePanel="think";
+
+function extractYTId(input){
+  input=input.trim();
+  let m=input.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);if(m)return m[1];
+  m=input.match(/[?&]v=([a-zA-Z0-9_-]{11})/);if(m)return m[1];
+  m=input.match(/youtube\.com\/live\/([a-zA-Z0-9_-]{11})/);if(m)return m[1];
+  if(/^[a-zA-Z0-9_-]{11}$/.test(input))return input;
+  return null;
+}
+
+function showYTPanel(which){
+  ytActivePanel=which;
+  if(which==="think"){
+    show($("ytPanelThink"));hide($("ytPanelEx"));
+    $("ytTabThink").className="yt-tab active-think";$("ytTabEx").className="yt-tab";
+  } else {
+    hide($("ytPanelThink"));show($("ytPanelEx"));
+    $("ytTabEx").className="yt-tab active-ex";$("ytTabThink").className="yt-tab";
+  }
+}
+
+function loadYT(which){
+  const inputEl=$(which==="think"?"ytInputThink":"ytInputEx");
+  const id=extractYTId(inputEl.value);
+  if(id){embedYT(which,id)}else{alert("Please enter a valid YouTube URL")}
+}
+
+function playPreset(which,id){
+  $(which==="think"?"ytInputThink":"ytInputEx").value="";
+  embedYT(which,id);
+}
+
+function embedYT(which,id){
+  ytIds[which]=id;
+  const wrapId=which==="think"?"ytWrapThink":"ytWrapEx";
+  const phId=which==="think"?"ytPlaceholderThink":"ytPlaceholderEx";
+  const iframeId=which==="think"?"ytIframeThink":"ytIframeEx";
+  hide($(phId));
+  const existing=$(iframeId);if(existing)existing.remove();
+  const shouldPlay=(state==="idle"&&which==="think")||(state==="exercising"&&which==="exercise");
+  const iframe=document.createElement("iframe");
+  iframe.id=iframeId;
+  iframe.src="https://www.youtube.com/embed/"+id+"?autoplay="+(shouldPlay?1:0)+"&rel=0&enablejsapi=1";
+  iframe.allow="autoplay; encrypted-media";
+  iframe.allowFullscreen=true;
+  $(wrapId).appendChild(iframe);
+  const currentMode=state==="exercising"?"exercise":"think";
+  if(which===currentMode)updateBgVideo(currentMode);
+  updateYTStatus();
+}
+
+function switchMusic(mode){
+  const playId=mode==="think"?"ytIframeThink":"ytIframeEx";
+  const pauseId=mode==="think"?"ytIframeEx":"ytIframeThink";
+  const playFrame=$(playId);
+  if(playFrame&&ytIds[mode])playFrame.contentWindow.postMessage(JSON.stringify({event:"command",func:"playVideo",args:[]}),"*");
+  const pauseFrame=$(pauseId);
+  if(pauseFrame)pauseFrame.contentWindow.postMessage(JSON.stringify({event:"command",func:"pauseVideo",args:[]}),"*");
+  updateBgVideo(mode);
+  updateYTStatus();
+}
+
+function updateYTStatus(){
+  const el=$("ytStatus");
+  el.innerHTML=state==="exercising"?"🔥 <strong>Workout music</strong> playing":"🧠 <strong>Think music</strong> playing";
+}
+
+// ─── 배경 비디오 ───
+function updateBgVideo(mode){
+  if(!settings.bgVideo)return;
+  const id=ytIds[mode];
+  if(!id){hide($("ytBgContainer"));$("ytBgControl").style.display="none";document.body.classList.remove("bg-video");return}
+  const container=$("ytBgContainer");
+  show(container);
+  document.body.classList.add("bg-video");
+  $("ytBgControl").style.display="block";
+  const existing=container.querySelector("iframe");
+  const newSrc="https://www.youtube.com/embed/"+id+"?autoplay=1&controls=0&mute=1&loop=1&rel=0&showinfo=0&modestbranding=1&enablejsapi=1&playsinline=1&playlist="+id;
+  if(existing){
+    if(!existing.src.includes(id)){existing.src=newSrc}
+  } else {
+    const iframe=document.createElement("iframe");
+    iframe.src=newSrc;
+    iframe.allow="autoplay; encrypted-media";
+    iframe.allowFullscreen=true;
+    container.insertBefore(iframe,container.firstChild);
+  }
+}
+
+function applyBgVideoSetting(){
+  if(settings.bgVideo){
+    const mode=state==="exercising"?"exercise":"think";
+    if(ytIds[mode])updateBgVideo(mode);
+  } else {
+    hide($("ytBgContainer"));
+    $("ytBgControl").style.display="none";
+    document.body.classList.remove("bg-video");
+  }
+}
+
+let bgControlTimer=null;
+function toggleBgControls(){
+  const container=$("ytBgContainer");
+  const isEnabled=container.style.pointerEvents==="auto";
+  container.style.pointerEvents=isEnabled?"none":"auto";
+  $("ytBgControl").textContent=isEnabled?"🎬":"✕";
+  if(bgControlTimer){clearTimeout(bgControlTimer);bgControlTimer=null}
+  if(!isEnabled){
+    bgControlTimer=setTimeout(()=>{
+      container.style.pointerEvents="none";
+      $("ytBgControl").textContent="🎬";
+      bgControlTimer=null;
+    },10000);
+  }
+}
+
+// ─── 키보드 단축키 ───
+document.addEventListener("keydown",(e)=>{
+  if(e.code==="Space"&&e.target.tagName!=="INPUT"){
+    e.preventDefault();
+    if(state==="idle")startExercise();
+    else if(state==="exercising")stopExercise();
+  }
+});
+
+// ─── 초기화 ───
+(function init(){
+  loadSettings2();loadActiveExercises();loadStats();loadHist();
+  if(stats.date!==today()){stats={date:today(),sends:0,exercise:0,think:0,exCount:0};saveStats();history=[];saveHist()}
+  $("setSound").checked=settings.sound;
+  $("setClub").checked=settings.club;
+  $("setBgVideo").checked=settings.bgVideo;
+  $("thinkTime").textContent=fmt(stats.exercise);
+  setRing("thinkRing",0);
+  updateUI();
+  if("Notification"in window&&Notification.permission==="default")Notification.requestPermission();
+})();
+</script>
+</body>
+</html>
