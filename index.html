@@ -81,6 +81,10 @@ body.club-mode.bg-video { background:transparent; }
 /* 흐름 설명 */
 .flow-hint { text-align:center; color:#555; font-size:.78rem; line-height:1.6; margin-top:.3rem; }
 .flow-hint strong { color:#999; }
+.space-hint { display:flex; align-items:center; justify-content:center; gap:.6rem; margin-top:1rem; padding:.8rem 1.2rem; background:rgba(139,92,246,.08); border:1px solid rgba(139,92,246,.2); border-radius:14px; animation:spacePulse 2s ease-in-out infinite; }
+@keyframes spacePulse { 0%,100%{opacity:.7;transform:scale(1)} 50%{opacity:1;transform:scale(1.02)} }
+.space-hint .kbd { display:inline-block; padding:.3rem .8rem; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); border-radius:6px; font-family:monospace; font-size:.85rem; font-weight:700; color:#e0e0e0; box-shadow:0 2px 0 rgba(0,0,0,.3); }
+.space-hint .hint-text { color:#a78bfa; font-size:.8rem; font-weight:600; }
 
 /* 버튼 */
 .btn { border:none; padding:.7rem 2rem; border-radius:12px; font-size:1rem; font-weight:600; cursor:pointer; transition:all .15s; }
@@ -298,8 +302,12 @@ body.club-mode .yt-bg-overlay { background:rgba(5,5,16,.45); }
         <div class="time-label" id="thinkLabel">Total exercise today</div>
       </div>
     </div>
+    <div class="space-hint" id="spaceHint">
+      <span class="kbd">Space</span>
+      <span class="hint-text">Press to start workout</span>
+    </div>
     <div class="flow-hint" id="flowHint">
-      After sending a message to Claude,<br>press <strong>Space</strong> or the button to start exercising
+      After sending a message to Claude,<br>press <strong>Space</strong> or the button below
     </div>
     <div class="btns">
       <button class="btn send" id="sendBtn" onclick="startExercise()">💬 Sent! Start Workout</button>
