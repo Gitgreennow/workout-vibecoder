@@ -234,7 +234,7 @@ body.club-mode .yt-bg-overlay { background:rgba(5,5,16,.45); }
 <div class="app">
   <div>
     <div class="logo">Workout Vibecoder</div>
-    <div class="sub">Exercise while vibe coding</div>
+    <div class="sub">Ship code. Stay shredded.</div>
   </div>
 
   <!-- SVG 그라데이션 정의 -->
@@ -261,7 +261,7 @@ body.club-mode .yt-bg-overlay { background:rgba(5,5,16,.45); }
         <button class="yt-go" onclick="loadYT('think')">Play</button>
       </div>
       <div class="yt-frame-wrap" id="ytWrapThink">
-        <div class="yt-placeholder" id="ytPlaceholderThink"><span>🎵</span>Music for code review</div>
+        <div class="yt-placeholder" id="ytPlaceholderThink"><span>🎵</span>Vibes for reviewing Claude's work</div>
       </div>
       <div class="yt-presets">
         <div class="yt-preset" onclick="playPreset('think','jfKfPfyJRdk')">lofi hip hop</div>
@@ -277,7 +277,7 @@ body.club-mode .yt-bg-overlay { background:rgba(5,5,16,.45); }
         <button class="yt-go" onclick="loadYT('exercise')">Play</button>
       </div>
       <div class="yt-frame-wrap" id="ytWrapEx">
-        <div class="yt-placeholder" id="ytPlaceholderEx"><span>🔥</span>Music for workouts</div>
+        <div class="yt-placeholder" id="ytPlaceholderEx"><span>🔥</span>Bangers for beast mode</div>
       </div>
       <div class="yt-presets">
         <div class="yt-preset" onclick="playPreset('exercise','hKyGMCZyFsg')">workout mix</div>
@@ -286,7 +286,7 @@ body.club-mode .yt-bg-overlay { background:rgba(5,5,16,.45); }
         <div class="yt-preset" onclick="playPreset('exercise','3MteSlpJCKo')">rock energy</div>
       </div>
     </div>
-    <div class="yt-now-playing" id="ytStatus">Music auto-switches based on state</div>
+    <div class="yt-now-playing" id="ytStatus">Music auto-switches with your flow</div>
   </div>
 
   <!-- 대기/생각 모드 카드 -->
@@ -304,13 +304,13 @@ body.club-mode .yt-bg-overlay { background:rgba(5,5,16,.45); }
     </div>
     <div class="space-hint" id="spaceHint">
       <span class="kbd">Space</span>
-      <span class="hint-text">Press to start workout</span>
+      <span class="hint-text">Smash to get swole</span>
     </div>
     <div class="flow-hint" id="flowHint">
-      After sending a message to Claude,<br>press <strong>Space</strong> or the button below
+      Sent a prompt? Claude's cooking — now you cook those muscles
     </div>
     <div class="btns">
-      <button class="btn send" id="sendBtn" onclick="startExercise()">💬 Sent! Start Workout</button>
+      <button class="btn send" id="sendBtn" onclick="startExercise()">💬 Sent! Let's get physical</button>
     </div>
     <div class="session-counter" id="sessionCounter"></div>
   </div>
@@ -319,7 +319,7 @@ body.club-mode .yt-bg-overlay { background:rgba(5,5,16,.45); }
   <div class="club-card hidden" id="exerciseCard">
     <div class="club-inner">
       <div class="neon-bar"></div>
-      <div class="text-center" style="margin-top:.8rem"><span class="badge exercise" id="exBadge">Working out! 💪</span></div>
+      <div class="text-center" style="margin-top:.8rem"><span class="badge exercise" id="exBadge">Gains o'clock 💪</span></div>
       <div class="timer-wrap">
         <svg width="280" height="280">
           <circle cx="140" cy="140" r="130" class="timer-bg"/>
@@ -339,10 +339,10 @@ body.club-mode .yt-bg-overlay { background:rgba(5,5,16,.45); }
       <div class="dots" id="exDots"></div>
       <div class="neon-bar"></div>
       <div class="btns" style="margin-top:.8rem">
-        <button class="btn back" onclick="stopExercise()">🧠 Back! Reviewing</button>
+        <button class="btn back" onclick="stopExercise()">🧠 Claude cooked! Time to review</button>
       </div>
       <div class="btns" style="margin-top:0">
-        <button class="btn ghost" onclick="skipCurrent()">Skip this exercise</button>
+        <button class="btn ghost" onclick="skipCurrent()">Skip this one</button>
       </div>
     </div>
   </div>
@@ -398,19 +398,19 @@ body.club-mode .yt-bg-overlay { background:rgba(5,5,16,.45); }
 <script>
 // ─── 운동 데이터 (전체 풀) ───
 const ALL_EXERCISES=[
-  {id:"pushup",name:"Push-ups",icon:"💪",desc:"Push your body up with arms extended. Chest & triceps.",reps:"12~15 reps",dur:45},
-  {id:"floor-press",name:"DB Floor Press",icon:"🏋️",desc:"Lie on the floor, press dumbbells up from chest.",reps:"10 reps",dur:45},
-  {id:"overhead-press",name:"DB Overhead Press",icon:"🙌",desc:"Press dumbbells overhead. Shoulders!",reps:"10 reps",dur:45},
-  {id:"db-row",name:"DB Row",icon:"🚣",desc:"Bend over, pull dumbbells up. Back builder!",reps:"10 each",dur:50},
-  {id:"db-curl",name:"DB Curl",icon:"💪",desc:"Curl dumbbells up with your biceps.",reps:"12 reps",dur:40},
-  {id:"lateral-raise",name:"DB Lateral Raise",icon:"🦅",desc:"Raise arms to the sides. Shoulder definition!",reps:"12 reps",dur:40},
-  {id:"plank",name:"Plank",icon:"🧱",desc:"Hold a straight body on your elbows.",reps:"30 sec",dur:35},
-  {id:"bulgarian-split",name:"Bulgarian Split Squat",icon:"🇧🇬",desc:"Rear foot elevated on chair, squat down.",reps:"8 each",dur:50},
-  {id:"goblet-squat",name:"DB Goblet Squat",icon:"🏆",desc:"Hold dumbbell at chest, squat deep.",reps:"12 reps",dur:45},
-  {id:"rdl",name:"DB Romanian Deadlift",icon:"🏗️",desc:"Hinge forward with slight knee bend. Hamstrings!",reps:"10 reps",dur:45},
-  {id:"glute-bridge",name:"Glute Bridge",icon:"🌉",desc:"Lie down, drive hips up. Glutes!",reps:"15 reps",dur:40},
-  {id:"calf-raise",name:"DB Calf Raise",icon:"🦶",desc:"Hold dumbbells, rise up on toes.",reps:"20 reps",dur:35},
-  {id:"leg-raise",name:"Leg Raise",icon:"🦵",desc:"Lie down, raise legs up. Lower abs!",reps:"12 reps",dur:40},
+  {id:"pushup",name:"Push-ups",icon:"💪",desc:"Claude's compiling — push yourself up. Chest & tri.",reps:"12~15 reps",dur:45},
+  {id:"floor-press",name:"DB Floor Press",icon:"🏋️",desc:"Hit the floor, press up. Your PR won't merge itself.",reps:"10 reps",dur:45},
+  {id:"overhead-press",name:"DB Overhead Press",icon:"🙌",desc:"Push weight to the sky. Boulder shoulders loading.",reps:"10 reps",dur:45},
+  {id:"db-row",name:"DB Row",icon:"🚣",desc:"Row like you're pulling a git rebase. Back gains.",reps:"10 each",dur:50},
+  {id:"db-curl",name:"DB Curl",icon:"💪",desc:"Curl while Claude codes. Bicep pump activated.",reps:"12 reps",dur:40},
+  {id:"lateral-raise",name:"DB Lateral Raise",icon:"🦅",desc:"Wings out. Shoulder definition like clean code.",reps:"12 reps",dur:40},
+  {id:"plank",name:"Plank",icon:"🧱",desc:"Hold the line. Solid as your codebase.",reps:"30 sec",dur:35},
+  {id:"bulgarian-split",name:"Bulgarian Split Squat",icon:"🇧🇬",desc:"Rear foot up, squat deep. Leg day is not optional.",reps:"8 each",dur:50},
+  {id:"goblet-squat",name:"DB Goblet Squat",icon:"🏆",desc:"Hug the weight, squat deep. Full stack, full depth.",reps:"12 reps",dur:45},
+  {id:"rdl",name:"DB Romanian Deadlift",icon:"🏗️",desc:"Hinge forward, feel the stretch. Hamstrings deploying.",reps:"10 reps",dur:45},
+  {id:"glute-bridge",name:"Glute Bridge",icon:"🌉",desc:"Drive hips up. Building that foundation.",reps:"15 reps",dur:40},
+  {id:"calf-raise",name:"DB Calf Raise",icon:"🦶",desc:"Rise up on toes. Ship calves to production.",reps:"20 reps",dur:35},
+  {id:"leg-raise",name:"Leg Raise",icon:"🦵",desc:"Legs up, core on fire. No bugs, just abs.",reps:"12 reps",dur:40},
 ];
 
 // 활성 운동 목록 (LocalStorage에서 관리)
@@ -514,7 +514,7 @@ function updateUI(){
   $("sThink").textContent=fmtMin(stats.think);
   $("sExCount").textContent=stats.exCount;
   if(state==="idle")$("thinkTime").textContent=fmt(stats.exercise);
-  if(stats.sends>0)$("sessionCounter").textContent=stats.sends+" messages sent · "+stats.exCount+" exercises done";
+  if(stats.sends>0)$("sessionCounter").textContent=stats.sends+" prompts shipped · "+stats.exCount+" exercises crushed";
   if(history.length>0){show($("histCard"));$("histList").innerHTML=history.map(h=>`<div class="hist-item"><span>${h.icon}</span><span class="hist-name">${h.name}</span><span class="hist-time">${fmtHM(h.at)}</span></div>`).join("")}
   else hide($("histCard"));
   renderWeek();
@@ -577,7 +577,7 @@ function renderEx(){
   $("exReps").textContent=e.reps;
   $("exDesc").textContent=e.desc;
   $("exElapsed").textContent="Session: "+fmt(exElapsed);
-  $("exBadge").textContent="Working out! 💪";
+  $("exBadge").textContent="Gains o'clock 💪";
   setRing("exRing",exLeft/e.dur);
   $("exDots").innerHTML=routine.map((_,i)=>`<div class="dot ${i<exIdx?"done":i===exIdx?"now":""}"></div>`).join("");
   speakExercise(e);
@@ -603,7 +603,7 @@ function stopExercise(){
   $("thinkBadge").className="badge idle";$("thinkBadge").textContent="Idle";
   $("thinkTime").textContent=fmt(stats.exercise);
   $("thinkLabel").textContent="Total exercise today";
-  $("flowHint").innerHTML='Review Claude\'s response<br>Send another message to <strong>start exercising</strong>';
+  $("flowHint").innerHTML='Claude delivered — review the code<br>Send again to <strong>keep grinding</strong>';
   setRing("thinkRing",0);
   beep();switchMusic("think");updateUI();
 }
@@ -747,7 +747,7 @@ function switchMusic(mode){
 
 function updateYTStatus(){
   const el=$("ytStatus");
-  el.innerHTML=state==="exercising"?"🔥 <strong>Workout music</strong> playing":"🧠 <strong>Think music</strong> playing";
+  el.innerHTML=state==="exercising"?"🔥 <strong>Beast mode beats</strong>":"🧠 <strong>Review mode vibes</strong>";
 }
 
 // ─── 배경 비디오 ───
